@@ -6,6 +6,8 @@ import { GoogleMapLoader, GoogleMap, Marker, InfoWindow } from "react-google-map
 import HoverExp from '../components/experiences/expHover';
 import { browserHistory } from 'react-router';
 import ChangeModal from '../components/welcome/changeModal';
+import superagent from 'superagent';
+
 var Rebase = require('re-base');
 
 import config from '../config';
@@ -22,9 +24,11 @@ class Welcome extends Component {
     this.changeLocation = this.changeLocation.bind(this);
     this.dismiss = this.dismiss.bind(this);
     this.changeUserLocation = this.changeUserLocation.bind(this);
+    this.search = this.search.bind(this);
     this.state = {
       showInfo: false,
-      changeModal: false
+      changeModal: false,
+      searchTerm: ''
     }
   }
 
@@ -53,11 +57,19 @@ class Welcome extends Component {
   }
 
   componentWillUnmount() {
-    let newArray = this.state.experiences.map((exp) => {
-      exp.showInfo = false;
-    });
+    // let newArray = this.state.experiences.map((exp) => {
+    //   exp.showInfo = false;
+    // });
 
     base.removeBinding(this.ref);
+  }
+
+  search(e) {
+    e.preventDefault();
+    //1. convert search to lat and lng object
+    //2. for each exp in state, compute distance between search and exp. If under ~50 miles, push to new array
+    //3. set that new array as exp state.
+    // var distances = google.maps.geometry.spherical.computeDistanceBetween()
   }
 
   hover(marker) {
@@ -213,7 +225,12 @@ class Welcome extends Component {
           <div className="row">
 
             <div className="col-md-6 col-sm-12 expRow" style={{ padding: '20px' }}>
-              <h4>Experiences Near You</h4>
+              <h4>Filter Experiences</h4>
+              <form onSubmit={this.search}>
+                <label>Search By Zip Code</label>
+                <input id="searchField" type="text" placeholder="Zip Code" onChange={(e) => this.setState({ searchTerm: e.target.value })}/>
+                <button>Search</button>
+              </form>
             {exp}
             </div>
 
