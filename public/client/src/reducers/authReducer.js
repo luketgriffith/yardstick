@@ -5,8 +5,8 @@ const initialState = {
   userExp: [],
   userListings: [],
   location: {
-    latitude: -80,
-    longitude: 35
+    latitude: null,
+    longitude: null
   }
 };
 
