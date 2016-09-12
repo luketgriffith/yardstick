@@ -26,12 +26,14 @@ class Welcome extends Component {
     this.dismiss = this.dismiss.bind(this);
     this.changeUserLocation = this.changeUserLocation.bind(this);
     this.search = this.search.bind(this);
+    this.getDistance = this.getDistance.bind(this);
     this.state = {
       showInfo: false,
       changeModal: false,
       searchTerm: '',
       latitude: '',
-      longitude: ''
+      longitude: '',
+      experiences: []
     }
   }
 
@@ -55,13 +57,12 @@ class Welcome extends Component {
       });
     } else {
       console.log('location thing not working')
-
     }
-    this.ref = base.bindToState(`experiences`, {
-      context: this,
-      state: 'experiences',
-      asArray: true
-    });
+    // this.ref = base.bindToState(`experiences`, {
+    //   context: this,
+    //   state: 'experiences',
+    //   asArray: true
+    // });
       
   }
   componentWillReceiveProps(props) {
@@ -71,28 +72,16 @@ class Welcome extends Component {
         context: this,
         asArray: true,
         then(data) {
-          function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
-            var R = 6371; // Radius of the earth in km
-            var dLat = deg2rad(lat2-lat1);  // deg2rad below
-            var dLon = deg2rad(lon2-lon1); 
-            var a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2)
-            ; 
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            var d = R * c; // Distance in km
-            return d;
-          }
           
-          function deg2rad(deg) {
-            return deg * (Math.PI/180)
-          }
           console.log('dem datas:', data)
           data.forEach((exp) => {
             console.log(exp, this.state)
-            let distance = getDistanceFromLatLonInKm(exp.latitude, exp.longitude, props.location.latitude, props.location.longitude)
+            let distance = this.getDistance(exp.latitude, exp.longitude, props.location.latitude, props.location.longitude)
             console.log('maybe a distance??', distance)
+            if(distance < 100) {
+              console.log('its less...', exp)
+              this.setState({  experiences: this.state.experiences.concat([exp]) })
+            }
           })
         }
       })
@@ -106,36 +95,36 @@ class Welcome extends Component {
     base.removeBinding(this.ref);
   }
 
+  getDistance(lat1, lon1, lat2, lon2) {
+    function deg2rad(deg) {
+      return deg * (Math.PI/180)
+    }
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(lat2-lat1);  // deg2rad below
+    var dLon = deg2rad(lon2-lon1); 
+    var a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c; // Distance in km
+    return d;
+  }
+
+
   search(e) {
     e.preventDefault();
     //1. convert search to lat and lng object
     //2. for each exp in state, compute distance between search and exp. If under ~50 miles, push to new array
     //3. set that new array as exp state.
     // var distances = google.maps.geometry.spherical.computeDistanceBetween()
-    
-    function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
-      var R = 6371; // Radius of the earth in km
-      var dLat = deg2rad(lat2-lat1);  // deg2rad below
-      var dLon = deg2rad(lon2-lon1); 
-      var a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2)
-        ; 
-      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-      var d = R * c; // Distance in km
-      return d;
-    }
 
-    function deg2rad(deg) {
-      return deg * (Math.PI/180)
-    }
+  
   }
 
   hover(marker) {
-    console.log('the marker we hover on: ', marker)
     let experiences = this.state.experiences;
-
     let newArray = experiences.map((exp) => {
       if(exp.key === marker.key) {
         // console.log('found it');
