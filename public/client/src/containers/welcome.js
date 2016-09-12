@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import Profile from '../components/welcome/profile';
 import { Link } from 'react-router';
 import { GoogleMapLoader, GoogleMap, Marker, InfoWindow } from "react-google-maps";
+import { default as MarkerClusterer } from "react-google-maps/lib/addons/MarkerClusterer";
 import HoverExp from '../components/experiences/expHover';
 import { browserHistory } from 'react-router';
 import ChangeModal from '../components/welcome/changeModal';
@@ -28,7 +29,9 @@ class Welcome extends Component {
     this.state = {
       showInfo: false,
       changeModal: false,
-      searchTerm: ''
+      searchTerm: '',
+      latitude: '',
+      longitude: ''
     }
   }
 
@@ -36,7 +39,12 @@ class Welcome extends Component {
     let { dispatch } = this.props;
     if ("geolocation" in navigator) {
       /* geolocation is available */
-      navigator.geolocation.getCurrentPosition(function(position) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.setState({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        
         dispatch({
           type: 'SET_LOCATION',
           payload: {
@@ -54,6 +62,36 @@ class Welcome extends Component {
       state: 'experiences',
       asArray: true
     });
+    
+    this.ref2 = base.fetch(`experiences`, {
+      context: this,
+      asArray: true,
+      then(data) {
+        function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+          var R = 6371; // Radius of the earth in km
+          var dLat = deg2rad(lat2-lat1);  // deg2rad below
+          var dLon = deg2rad(lon2-lon1); 
+          var a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2)
+          ; 
+          var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+          var d = R * c; // Distance in km
+          return d;
+        }
+        
+        function deg2rad(deg) {
+          return deg * (Math.PI/180)
+        }
+        // console.log('dem datas:', data)
+        data.forEach((exp) => {
+          console.log(exp, this.state)
+          let distance = getDistanceFromLatLonInKm(exp.latitude, exp.longitude, this.state.latitude, this.state.longitude)
+          console.log('maybe a distance??', distance)
+        })
+      }
+    })
   }
 
   componentWillUnmount() {
@@ -70,6 +108,24 @@ class Welcome extends Component {
     //2. for each exp in state, compute distance between search and exp. If under ~50 miles, push to new array
     //3. set that new array as exp state.
     // var distances = google.maps.geometry.spherical.computeDistanceBetween()
+    
+    function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+      var R = 6371; // Radius of the earth in km
+      var dLat = deg2rad(lat2-lat1);  // deg2rad below
+      var dLon = deg2rad(lon2-lon1); 
+      var a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2)
+        ; 
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      var d = R * c; // Distance in km
+      return d;
+    }
+
+    function deg2rad(deg) {
+      return deg * (Math.PI/180)
+    }
   }
 
   hover(marker) {
@@ -236,14 +292,20 @@ class Welcome extends Component {
 
             <div style={{ height: '500px', padding: '20px' }} className="map col-md-6 col-sm-12">
             <GoogleMapLoader
-            containerElement={<div style={{ height: `100%`, padding: '5%;'  }} />}
+            containerElement={<div style={{ height: `100%`, padding: '5%'  }} />}
             googleMapElement={
               <GoogleMap
               ref={(map) => console.log(map)}
               defaultZoom={7}
               center={{ lat: this.props.location.latitude, lng: this.props.location.longitude }}
               >
+              <MarkerClusterer
+                averageCenter
+                enableRetinaIcons
+                gridSize={ 60 }
+              >
               {markerSection}
+              </MarkerClusterer>
               </GoogleMap>
             }
             />
