@@ -80,7 +80,6 @@ class Welcome extends Component {
     let { dispatch } = this.props;
     var geocoder = new google.maps.Geocoder();
       geocoder.geocode({ 'address': this.state.searchTerm }, function(res, status) {
-        console.log('zoop zop: ', res)
         if(status === 'OK') {
           let data = {
             latitude: res[0].geometry.viewport.f.b,

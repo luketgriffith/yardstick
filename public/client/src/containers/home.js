@@ -159,6 +159,8 @@ class Home extends Component{
           <Link to="/about" className="about-link">More Info</Link>
           <div className="homePage">
             <h3>Outdoors</h3>
+            <p>Outdoors exists to help people enjoy the great outdoors in new ways, by connecting hosts (private property owners 
+              with a unique experience to share) with people who want to get outside.</p>
             <div className="home-buttons">
               <button onClick={this.toggleSignIn} style={{ display: this.state.logInBtn ? "inline-block" : "none" }}>Log In</button>
               <button onClick={this.toggleSignUp} style={{ display: this.state.signUpBtn ? "inline-block" : "none" }}>Sign Up</button>
