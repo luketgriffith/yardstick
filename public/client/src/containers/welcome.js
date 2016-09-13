@@ -72,14 +72,9 @@ class Welcome extends Component {
         context: this,
         asArray: true,
         then(data) {
-          
-          console.log('dem datas:', data)
           data.forEach((exp) => {
-            console.log(exp, this.state)
             let distance = this.getDistance(exp.latitude, exp.longitude, props.location.latitude, props.location.longitude)
-            console.log('maybe a distance??', distance)
             if(distance < 100) {
-              console.log('its less...', exp)
               this.setState({  experiences: this.state.experiences.concat([exp]) })
             }
           })
