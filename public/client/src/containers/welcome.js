@@ -49,11 +49,30 @@ class Welcome extends Component {
       console.log('location thing not working')
 
     }
-    this.ref = base.bindToState(`experiences`, {
-      context: this,
-      state: 'experiences',
-      asArray: true
-    });
+    // this.ref = base.bindToState(`experiences`, {
+    //   context: this,
+    //   state: 'experiences',
+    //   asArray: true
+    // });
+
+  }
+  
+  componentWillReceiveProps(props) {
+    console.log('receiving props...', props)
+    if(props.location.latitude !== null && props.location.longitude !== null) {
+      this.ref2 = base.fetch(`experiences`, {
+        context: this,
+        asArray: true,
+        then(data) {
+          data.forEach((exp) => {
+            let distance = this.getDistance(exp.latitude, exp.longitude, props.location.latitude, props.location.longitude)
+            if(distance < 100) {
+              this.setState({  experiences: this.state.experiences.concat([exp]) })
+            }
+          })
+        }
+      })
+    }
   }
 
   componentWillUnmount() {
