@@ -21,14 +21,14 @@ class Welcome extends Component {
     this.hover = this.hover.bind(this);
     this.showDetail = this.showDetail.bind(this);
     this.handleMarkerClose = this.handleMarkerClose.bind(this);
-    this.changeLocation = this.changeLocation.bind(this);
-    this.dismiss = this.dismiss.bind(this);
-    this.changeUserLocation = this.changeUserLocation.bind(this);
     this.search = this.search.bind(this);
+    this.getDistance = this.getDistance.bind(this);
     this.state = {
       showInfo: false,
       changeModal: false,
-      searchTerm: ''
+      searchTerm: '',
+      searchType: 'name',
+      experiences: []
     }
   }
 
@@ -47,16 +47,9 @@ class Welcome extends Component {
       });
     } else {
       console.log('location thing not working')
-
     }
-    // this.ref = base.bindToState(`experiences`, {
-    //   context: this,
-    //   state: 'experiences',
-    //   asArray: true
-    // });
-
   }
-  
+
   componentWillReceiveProps(props) {
     console.log('receiving props...', props)
     if(props.location.latitude !== null && props.location.longitude !== null) {
@@ -76,20 +69,49 @@ class Welcome extends Component {
   }
 
   componentWillUnmount() {
-    // let newArray = this.state.experiences.map((exp) => {
-    //   exp.showInfo = false;
-    // });
-
-    base.removeBinding(this.ref);
+    base.removeBinding(this.ref2);
   }
 
   search(e) {
     e.preventDefault();
-    //1. convert search to lat and lng object
-    //2. for each exp in state, compute distance between search and exp. If under ~50 miles, push to new array
-    //3. set that new array as exp state.
-    // var distances = google.maps.geometry.spherical.computeDistanceBetween()
+    this.setState({
+      experiences: []
+    });
+
+    let { dispatch } = this.props;
+    var geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ 'address': this.state.searchTerm }, function(res, status) {
+        console.log('zoop zop: ', res)
+        if(status === 'OK') {
+          let data = {
+            latitude: res[0].geometry.viewport.f.b,
+            longitude: res[0].geometry.viewport.b.b,
+          }
+          dispatch({
+            type: 'SET_LOCATION',
+            payload: data
+          });
+        }
+    })
   }
+
+  getDistance(lat1, lon1, lat2, lon2) {
+    function deg2rad(deg) {
+      return deg * (Math.PI/180)
+    }
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(lat2-lat1);  // deg2rad below
+    var dLon = deg2rad(lon2-lon1);
+    var a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ;
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    var d = R * c; // Distance in km
+    return d;
+  }
+
 
   hover(marker) {
     console.log('the marker we hover on: ', marker)
@@ -154,49 +176,16 @@ class Welcome extends Component {
     });
   }
 
-  changeLocation() {
-    this.setState({
-      changeModal: true
-    });
-  }
-
-  dismiss(){
-    this.setState({
-      changeModal: false
-    });
-  }
-
-  changeUserLocation(e) {
-    e.preventDefault();
-    let { dispatch, form } = this.props;
-    var geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ 'address': form.changeLocation.address.value}, function(res, status) {
-        if(status === 'OK') {
-          let data = {
-            latitude: res[0].geometry.viewport.f.b,
-            longitude: res[0].geometry.viewport.b.b,
-          }
-          dispatch({
-            type: 'SET_LOCATION',
-            payload: data
-          });
-        }
-    })
-    this.setState({
-      changeModal: false
-    });
-  }
-
   render(){
     let exp;
     let markerSection;
 
-
     if(this.state.experiences && this.state.experiences.length > 0) {
       exp = this.state.experiences.map((exp) => {
+        console.log('the exp: ', exp)
         return (
-          <div key={exp.key}>
-            <Link to={"/experiences/" + exp.key }>{exp.title}</Link>
+          <div key={exp.key} style={{ padding: '0 25px', margin: '20px 0px' }} className="col-md-12">
+            <Link to={"/experiences/" + exp.key + '/' + exp.user}><span>{exp.title}</span>- {exp.category}</Link>
             <div>
               {exp.images.map((img) => <img style={{ maxWidth: '100px', display: 'inline-block' }}src={img.url} />)}
             </div>
@@ -237,23 +226,24 @@ class Welcome extends Component {
         </div>
 
           <div className="row">
-
             <div className="col-md-6 col-sm-12 expRow" style={{ padding: '20px' }}>
-              <h4>Filter Experiences</h4>
-              <form onSubmit={this.search}>
-                <label>Search By:
-                  <select>
-                    <option>Name</option>
-                    <option>Experience Type</option>
-                  </select>
-                </label>
-                <input id="searchField" type="text" placeholder="Zip Code" onChange={(e) => this.setState({ searchTerm: e.target.value })}/>
-                <button>Search</button>
-              </form>
-            {exp}
+              <div className="col-md-12">
+                <form onSubmit={this.search}>
+                  <label style={{ display: 'block' }}>
+                    Search By Zip Code
+                  </label>
+                  <input id="searchField" type="text" placeholder="Zip Code" onChange={(e) => this.setState({ searchTerm: e.target.value })}/>
+                  <button>Search</button>
+                </form>
+              </div>
+
+              <div className="row">
+                {exp}
+              </div>
+
             </div>
 
-            <div style={{ height: '500px', padding: '20px' }} className="map col-md-6 col-sm-12">
+            <div style={{ height: '500px', padding: '50px' }} className="map col-md-6 col-sm-12">
             <GoogleMapLoader
             containerElement={<div style={{ height: `100%`, padding: '5%;'  }} />}
             googleMapElement={
