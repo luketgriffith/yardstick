@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import Profile from '../components/welcome/profile';
 import { Link } from 'react-router';
 import { GoogleMapLoader, GoogleMap, Marker, InfoWindow } from "react-google-maps";
-import { default as MarkerClusterer } from "react-google-maps/lib/addons/MarkerClusterer";
 import HoverExp from '../components/experiences/expHover';
 import { browserHistory } from 'react-router';
 import ChangeModal from '../components/welcome/changeModal';
@@ -26,14 +25,10 @@ class Welcome extends Component {
     this.dismiss = this.dismiss.bind(this);
     this.changeUserLocation = this.changeUserLocation.bind(this);
     this.search = this.search.bind(this);
-    this.getDistance = this.getDistance.bind(this);
     this.state = {
       showInfo: false,
       changeModal: false,
-      searchTerm: '',
-      latitude: '',
-      longitude: '',
-      experiences: []
+      searchTerm: ''
     }
   }
 
@@ -41,12 +36,7 @@ class Welcome extends Component {
     let { dispatch } = this.props;
     if ("geolocation" in navigator) {
       /* geolocation is available */
-      navigator.geolocation.getCurrentPosition((position) => {
-        this.setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-        
+      navigator.geolocation.getCurrentPosition(function(position) {
         dispatch({
           type: 'SET_LOCATION',
           payload: {
@@ -57,36 +47,15 @@ class Welcome extends Component {
       });
     } else {
       console.log('location thing not working')
+
     }
-    // this.ref = base.bindToState(`experiences`, {
-    //   context: this,
-    //   state: 'experiences',
-    //   asArray: true
-    // });
-      
+    this.ref = base.bindToState(`experiences`, {
+      context: this,
+      state: 'experiences',
+      asArray: true
+    });
   }
-  componentWillReceiveProps(props) {
-    console.log('receiving props...', props)
-    if(props.location.latitude !== null && props.location.longitude !== null) {
-      this.ref2 = base.fetch(`experiences`, {
-        context: this,
-        asArray: true,
-        then(data) {
-          
-          console.log('dem datas:', data)
-          data.forEach((exp) => {
-            console.log(exp, this.state)
-            let distance = this.getDistance(exp.latitude, exp.longitude, props.location.latitude, props.location.longitude)
-            console.log('maybe a distance??', distance)
-            if(distance < 100) {
-              console.log('its less...', exp)
-              this.setState({  experiences: this.state.experiences.concat([exp]) })
-            }
-          })
-        }
-      })
-    }
-  }
+
   componentWillUnmount() {
     // let newArray = this.state.experiences.map((exp) => {
     //   exp.showInfo = false;
@@ -95,36 +64,18 @@ class Welcome extends Component {
     base.removeBinding(this.ref);
   }
 
-  getDistance(lat1, lon1, lat2, lon2) {
-    function deg2rad(deg) {
-      return deg * (Math.PI/180)
-    }
-    var R = 6371; // Radius of the earth in km
-    var dLat = deg2rad(lat2-lat1);  // deg2rad below
-    var dLon = deg2rad(lon2-lon1); 
-    var a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-      ; 
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    var d = R * c; // Distance in km
-    return d;
-  }
-
-
   search(e) {
     e.preventDefault();
     //1. convert search to lat and lng object
     //2. for each exp in state, compute distance between search and exp. If under ~50 miles, push to new array
     //3. set that new array as exp state.
     // var distances = google.maps.geometry.spherical.computeDistanceBetween()
-
-  
   }
 
   hover(marker) {
+    console.log('the marker we hover on: ', marker)
     let experiences = this.state.experiences;
+
     let newArray = experiences.map((exp) => {
       if(exp.key === marker.key) {
         // console.log('found it');
@@ -262,13 +213,8 @@ class Welcome extends Component {
 
       return(
         <div>
-        <ChangeModal
-          visible={this.state.changeModal}
-          dismiss={this.dismiss}
-          changeLocation={this.changeUserLocation}
-        />
-        <div className="welcomeInfo">
-          <p>Welcome! Choose an experience from the list or map below, or add your own! <a href="#" onClick={this.changeLocation}>Change Location</a></p>
+        <div className="welcomeInfo" style={{ marginTop: '30px'}}>
+          <p>Welcome! Choose an experience from the list or map below, or add your own!</p>
         </div>
 
           <div className="row">
@@ -276,7 +222,12 @@ class Welcome extends Component {
             <div className="col-md-6 col-sm-12 expRow" style={{ padding: '20px' }}>
               <h4>Filter Experiences</h4>
               <form onSubmit={this.search}>
-                <label>Search By Zip Code</label>
+                <label>Search By:
+                  <select>
+                    <option>Name</option>
+                    <option>Experience Type</option>
+                  </select>
+                </label>
                 <input id="searchField" type="text" placeholder="Zip Code" onChange={(e) => this.setState({ searchTerm: e.target.value })}/>
                 <button>Search</button>
               </form>
@@ -285,20 +236,14 @@ class Welcome extends Component {
 
             <div style={{ height: '500px', padding: '20px' }} className="map col-md-6 col-sm-12">
             <GoogleMapLoader
-            containerElement={<div style={{ height: `100%`, padding: '5%'  }} />}
+            containerElement={<div style={{ height: `100%`, padding: '5%;'  }} />}
             googleMapElement={
               <GoogleMap
               ref={(map) => console.log(map)}
               defaultZoom={7}
-              center={{ lat: this.props.location.latitude ? this.props.location.latitude : 35 , lng: this.props.location.longitude ? this.props.location.longitude : -80 }}
-              >
-              <MarkerClusterer
-                averageCenter
-                enableRetinaIcons
-                gridSize={ 60 }
+              center={{ lat: this.props.location.latitude, lng: this.props.location.longitude }}
               >
               {markerSection}
-              </MarkerClusterer>
               </GoogleMap>
             }
             />
