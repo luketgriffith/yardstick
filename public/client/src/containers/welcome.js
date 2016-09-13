@@ -51,9 +51,8 @@ class Welcome extends Component {
   }
 
   componentWillReceiveProps(props) {
-    console.log('receiving props...', props)
     if(props.location.latitude !== null && props.location.longitude !== null) {
-      this.ref2 = base.fetch(`experiences`, {
+      base.fetch(`experiences`, {
         context: this,
         asArray: true,
         then(data) {
@@ -69,7 +68,7 @@ class Welcome extends Component {
   }
 
   componentWillUnmount() {
-    base.removeBinding(this.ref2);
+
   }
 
   search(e) {
@@ -114,7 +113,6 @@ class Welcome extends Component {
 
 
   hover(marker) {
-    console.log('the marker we hover on: ', marker)
     let experiences = this.state.experiences;
 
     let newArray = experiences.map((exp) => {
@@ -182,9 +180,8 @@ class Welcome extends Component {
 
     if(this.state.experiences && this.state.experiences.length > 0) {
       exp = this.state.experiences.map((exp) => {
-        console.log('the exp: ', exp)
         return (
-          <div key={exp.key} style={{ padding: '0 25px', margin: '20px 0px' }} className="col-md-12">
+          <div key={exp.key} style={{ padding: '0 30px', margin: '20px 0px' }} className="col-md-12 expList">
             <Link to={"/experiences/" + exp.key + '/' + exp.user}><span>{exp.title}</span>- {exp.category}</Link>
             <div>
               {exp.images.map((img) => <img style={{ maxWidth: '100px', display: 'inline-block' }}src={img.url} />)}
@@ -227,7 +224,7 @@ class Welcome extends Component {
 
           <div className="row">
             <div className="col-md-6 col-sm-12 expRow" style={{ padding: '20px' }}>
-              <div className="col-md-12">
+              <div className="col-md-12 searchZip">
                 <form onSubmit={this.search}>
                   <label style={{ display: 'block' }}>
                     Search By Zip Code
@@ -245,12 +242,12 @@ class Welcome extends Component {
 
             <div style={{ height: '500px', padding: '50px' }} className="map col-md-6 col-sm-12">
             <GoogleMapLoader
-            containerElement={<div style={{ height: `100%`, padding: '5%;'  }} />}
+            containerElement={<div style={{ height: `100%`, padding: '5%'  }} />}
             googleMapElement={
               <GoogleMap
               ref={(map) => console.log(map)}
               defaultZoom={7}
-              center={{ lat: this.props.location.latitude, lng: this.props.location.longitude }}
+              center={{ lat: this.props.location.latitude ? this.props.location.latitude : -35, lng: this.props.location.longitude ? this.props.location.longitude : 80 }}
               >
               {markerSection}
               </GoogleMap>
